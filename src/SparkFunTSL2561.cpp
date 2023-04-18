@@ -17,20 +17,22 @@
 #include <Wire.h>
 
 
-SFE_TSL2561::SFE_TSL2561(void)
+SFE_TSL2561::SFE_TSL2561(TwoWire *theWire)
 	// SFE_TSL2561 object
-{}
-
-
-boolean SFE_TSL2561::begin(void)
-	// Initialize TSL2561 library with default address (0x39)
-	// Always returns true
 {
-	return(begin(TSL2561_ADDR));
+_wire = theWire;
 }
 
 
-boolean SFE_TSL2561::begin(char i2c_address)
+boolean SFE_TSL2561::begin(bool wireBegin)
+	// Initialize TSL2561 library with default address (0x39)
+	// Always returns true
+{
+	return(begin(wireBegin,TSL2561_ADDR));
+}
+
+
+boolean SFE_TSL2561::begin(bool wireBegin,char i2c_address)
 	// Initialize TSL2561 library to arbitrary address or:
 	// TSL2561_ADDR_0 (0x29 address with '0' shorted on board)
 	// TSL2561_ADDR   (0x39 default address)
@@ -38,7 +40,7 @@ boolean SFE_TSL2561::begin(char i2c_address)
 	// Always returns true
 {
 	_i2c_address = i2c_address;
-	Wire.begin();
+	if (wireBegin) _wire->begin();
 	return(true);
 }
 
@@ -290,9 +292,9 @@ boolean SFE_TSL2561::clearInterrupt(void)
 	// (Also see getError() below)
 {
 	// Set up command byte for interrupt clear
-	Wire.beginTransmission(_i2c_address);
-	Wire.write(TSL2561_CMD_CLEAR);
-	_error = Wire.endTransmission();
+	_wire->beginTransmission(_i2c_address);
+	_wire->write(TSL2561_CMD_CLEAR);
+	_error = _wire->endTransmission();
 	if (_error == 0)
 		return(true);
 
@@ -336,17 +338,17 @@ boolean SFE_TSL2561::readByte(unsigned char address, unsigned char &value)
 	// (Also see getError() above)
 {
 	// Set up command byte for read
-	Wire.beginTransmission(_i2c_address);
-	Wire.write((address & 0x0F) | TSL2561_CMD);
-	_error = Wire.endTransmission();
+	_wire->beginTransmission(_i2c_address);
+	_wire->write((address & 0x0F) | TSL2561_CMD);
+	_error = _wire->endTransmission();
 
 	// Read requested byte
 	if (_error == 0)
 	{
-		Wire.requestFrom(_i2c_address,1);
-		if (Wire.available() == 1)
+		_wire->requestFrom(_i2c_address,1);
+		if (_wire->available() == 1)
 		{
-			value = Wire.read();
+			value = _wire->read();
 			return(true);
 		}
 	}
@@ -362,11 +364,11 @@ boolean SFE_TSL2561::writeByte(unsigned char address, unsigned char value)
 	// (Also see getError() above)
 {
 	// Set up command byte for write
-	Wire.beginTransmission(_i2c_address);
-	Wire.write((address & 0x0F) | TSL2561_CMD);
+	_wire->beginTransmission(_i2c_address);
+	_wire->write((address & 0x0F) | TSL2561_CMD);
 	// Write byte
-	Wire.write(value);
-	_error = Wire.endTransmission();
+	_wire->write(value);
+	_error = _wire->endTransmission();
 	if (_error == 0)
 		return(true);
 
@@ -384,18 +386,18 @@ boolean SFE_TSL2561::readUInt(unsigned char address, unsigned int &value)
 	char high, low;
 	
 	// Set up command byte for read
-	Wire.beginTransmission(_i2c_address);
-	Wire.write((address & 0x0F) | TSL2561_CMD);
-	_error = Wire.endTransmission();
+	_wire->beginTransmission(_i2c_address);
+	_wire->write((address & 0x0F) | TSL2561_CMD);
+	_error = _wire->endTransmission();
 
 	// Read two bytes (low and high)
 	if (_error == 0)
 	{
-		Wire.requestFrom(_i2c_address,2);
-		if (Wire.available() == 2)
+		_wire->requestFrom(_i2c_address,2);
+		if (_wire->available() == 2)
 		{
-			low = Wire.read();
-			high = Wire.read();
+			low = _wire->read();
+			high = _wire->read();
 			// Combine bytes into unsigned int
 			value = word(high,low);
 			return(true);
