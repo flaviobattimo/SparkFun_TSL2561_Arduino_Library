@@ -17,6 +17,8 @@
 #define SparkFunTSL2561_h
 
 #include "Arduino.h"
+#include <Wire.h>
+
 
 class SFE_TSL2561
 {
